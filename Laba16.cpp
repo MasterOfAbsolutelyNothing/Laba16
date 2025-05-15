@@ -225,19 +225,6 @@ void PowerfulMage::CastSpellOrSkip(Enemy& e) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Enemy {
 private:
     int levelmob;
@@ -387,7 +374,7 @@ int main() {
     //low level   lower required
     try
     {
-        PowerfulMage* mage4 = new PowerfulMage("Medea", PowerfulMage::HealthReturn(), 30, ClassWepons::staff, 3, 0, 100);
+        PowerfulMage* mage4 = new PowerfulMage("Medea", PowerfulMage::HealthReturn(), 30, ClassWepons::staff, 10, 0, 100);
         mage4->checkLevelBeforeSPeLL();
         delete mage4;
     }
@@ -403,7 +390,7 @@ int main() {
    
     try
     {
-        Hero* mage5 = new Mage("Weaver", Mage::HealthReturn(), 10, ClassWepons::staff, 0, 0, 10);
+        Hero* mage5 = new Mage("Weaver", Mage::HealthReturn(), 100, ClassWepons::staff, 0, 0, 10);
         mage5->equipItem("Legendary Ring");
         delete mage5;
     }
