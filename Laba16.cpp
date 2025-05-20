@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdint>
 #include <algorithm>
+#include<vector>
 using namespace std;
 
 enum ClassWepons : std::uint8_t { staff, sword };
@@ -10,12 +11,34 @@ enum ClassEnemy { dragon, slime };
 class Enemy;
 class Hero;
 
-class Hero {
+class Observer {
+public:
+
+    virtual void HealthUpdate(Hero* hero) = 0;
+    virtual ~Observer(){}
+};
+
+
+
+
+  
+class Hero{
 protected:
     static int count;
     int mana;
 
+    
+
+
+
 public:
+
+
+
+
+
+
+
 
     int level;
     int health;
@@ -34,17 +57,13 @@ public:
     }
 
 
-    static int HealthReturn() {
+    static  int HealthReturn() {
 
         return health2;
 
     }
 
-    /*static void setDefaultHealth(int val) {
-        health2 = val;
-    }*/
-
-
+ 
 
     void compareHeroDamage(const Hero& other) const {                     //const Hero& other — не даёт изменять переданного героя.         const после скобок — не даёт функции изменять текущий объект.
 
@@ -60,11 +79,6 @@ public:
 
 
 
-    /* int GetDamage()const {
-         return damage;
-     }*/
-
-
     Hero(string in_name, int in_health, int in_damage, ClassWepons in_wepon,
         int in_level, int in_powerHero)
         : name(in_name), health(in_health), damage(in_damage), wepon(in_wepon),
@@ -78,6 +92,10 @@ public:
 
     virtual ~Hero() {}
 
+
+
+
+
     void DamageOFHero(int dmgofHero);
     void DamageFromHero(int dmgfromHero, Enemy& target);
 
@@ -88,37 +106,25 @@ public:
     friend void comparePower(Hero& h, Enemy& e);
     friend void lastwords(Hero& h, Enemy& e);
 
+
+
     friend class Gstats;
     Hero() : name("Unknown"), health(0), damage(0), wepon(staff), level(1), powerHero(0), mana(100) {
         count++;
     }
 
 
-    Hero operator+(const Hero& h1) {
-        Hero result;
-        result.health = h1.health + this->health;
-        return result;
-    }
+    virtual void AddObserver(Observer* observer) = 0;
+    virtual void removeObserver(Observer* observer) = 0;
+    virtual void NotifyObserver() = 0;
 
-    bool operator==(const Hero& h1) {
-        return  h1.damage == this->damage;
-    }
-
-    bool operator&&(const Hero& h1) {
-        return(h1.level >= 1 && this->level >= 1);
-    }
-
-
+    
 };
 
 
-
-int Hero::count = 0;
-int Hero::health2 = 120;
-
-
-
 class Mage : public Hero {
+private:
+    vector<Observer*> observers;
 public:
     int spellPower;
 
@@ -138,7 +144,66 @@ public:
 
 
     void CastSpellOrSkip(Enemy& e);
+
+
+    void AddObserver(Observer* observer) override ;
+    void removeObserver(Observer* observer) override;
+     void NotifyObserver() override ;
+
+
+
 };
+
+
+
+void Mage::AddObserver(Observer* observer)  {
+    observers.push_back(observer);
+}
+
+void Mage::removeObserver(Observer* observer) {
+    observers.erase(remove(observers.begin(), observers.end(), observer), observers.end());
+}
+
+void Mage::NotifyObserver() {
+    
+    for (Observer* observer : observers) {
+        observer->HealthUpdate(this);
+    }
+
+}
+
+
+
+
+class UI :public Observer {
+
+
+public:
+    void HealthUpdate(Hero* hero) override {
+
+        cout << "state changing" << endl;
+    }
+
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int Hero::count = 0;
+int Hero::health2 = 120;
+
 
 
 
@@ -170,9 +235,6 @@ public:
 
 
 
-
-
-
 void Hero::equipItem(const string& itemName) {
     if (damage < 70) {
         throw logic_error(name + " cannot equip " + itemName );
@@ -183,15 +245,11 @@ void Hero::equipItem(const string& itemName) {
 
 
 
-
-
 void PowerfulMage::checkLevelBeforeSPeLL() {
     if (level <= 3) {
         throw domain_error(name + " is too weak to cast a spell");
     }
 }
-
-
 
 
 
@@ -209,7 +267,6 @@ void Mage::CastSpellOrSkip(Enemy& e) {
 }
 
 
-
 void PowerfulMage::CastSpellOrSkip(Enemy& e) {
     const int spellCost = 30;
     if (mana >= spellCost) {
@@ -221,6 +278,25 @@ void PowerfulMage::CastSpellOrSkip(Enemy& e) {
         cout << name << " doesn't have enough mana (" << mana << "). Skipping turn.\n";
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -252,11 +328,31 @@ public:
 };
 
 
+
+
+
+
+//ttutautuatuatautuatuau
+
+
+
+
 void Hero::DamageOFHero(int dmgofHero) {
     health -= dmgofHero;
     if (health < 0) health = 0;
     cout << name << " takes " << dmgofHero << " damage. Health: " << health << endl;
+    NotifyObserver();
 }
+
+
+
+//tatataatatttaattat
+
+
+
+
+
+
 
 void Hero::DamageFromHero(int dmgfromHero, Enemy& target) {
     cout << name << " deals " << dmgfromHero << " damage!" << endl;
@@ -340,13 +436,32 @@ int main() {
 
     Hero::HealthReturn;
 
+    UI* ui = new UI();
+
     Hero* mage = new Mage("Merlin", Mage::HealthReturn(), 30, ClassWepons::staff, 0, 0, 100);
 
     cout << "Default hero health is set to: " << Hero::HealthReturn() << endl;
     cout << mage->name << " has health: " << mage->health << endl;
 
-    Hero* mage2 = new Mage("Yennefer", Mage::HealthReturn(), 30, ClassWepons::staff, 1, 0, 100);
+    mage->AddObserver(ui);
+    mage->DamageOFHero(mage->damage);
+
+
+
+
+
+
+
+
+
+    Hero* mage2 = new Mage("Weaver", Mage::HealthReturn(), 100, ClassWepons::staff, 0, 0, 10);
     cout << mage2->name << " has health: " << mage2->health << endl;
+
+
+
+
+
+
 
 
     cout << "\n\n\n\n" << endl;
@@ -358,37 +473,37 @@ int main() {
     cout << "\n\n\n\n" << endl;
 
 
-    //low health   negative value or 0
-    try {
-        Hero* mage3 = new Mage("Morgana", -5, 30, ClassWepons::staff, 0, 0, 100);
-        delete mage3;
-    }
-    catch (const invalid_argument& e) {
-        cout  << e.what() << endl;
-    }
+    ////low health   negative value or 0
+    //try {
+    //    Hero* mage3 = new Mage("Morgana", -5, 30, ClassWepons::staff, 0, 0, 100);
+    //    delete mage3;
+    //}
+    //catch (const invalid_argument& e) {
+    //    cout  << e.what() << endl;
+    //}
 
 
 
 
 
-    //low level   lower required
-    try
-    {
-        PowerfulMage* mage4 = new PowerfulMage("Medea", PowerfulMage::HealthReturn(), 30, ClassWepons::staff, 10, 0, 100);
-        mage4->checkLevelBeforeSPeLL();
-        delete mage4;
-    }
+    ////low level   lower required
+    //try
+    //{
+    //    PowerfulMage* mage4 = new PowerfulMage("Medea", PowerfulMage::HealthReturn(), 30, ClassWepons::staff, 10, 0, 100);
+    //    mage4->checkLevelBeforeSPeLL();
+    //    delete mage4;
+    //}
 
-    catch (const domain_error& e) {
+    //catch (const domain_error& e) {
 
-        cout << e.what() << endl;
-    }
+    //    cout << e.what() << endl;
+    //}
 
 
 
 
    
-    try
+   /* try
     {
         Hero* mage5 = new Mage("Weaver", Mage::HealthReturn(), 100, ClassWepons::staff, 0, 0, 10);
         mage5->equipItem("Legendary Ring");
@@ -398,7 +513,7 @@ int main() {
     catch (const logic_error& e) {
 
         cout  << e.what() << endl;
-    }
+    }*/
 
 
     delete mage;
